@@ -1,0 +1,100 @@
+Necesito que generes el código completo para una prueba técnica de Backend Developer.
+
+REQUISITOS:
+
+📦 Proyecto: prueba-tecnica-backend
+
+📁 ESTRUCTURA:
+prueba-tecnica-backend/
+├── README.md (principal con explicación de ambos retos)
+├── .gitignore
+│
+├── reto1_user_service/
+│   ├── main.py
+│   ├── models/
+│   │   └── user.py
+│   ├── routes/
+│   │   └── user_routes.py
+│   ├── config/
+│   │   └── database.py
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   ├── .env.example
+│   ├── docker-compose.yml (para levantar con MongoDB local)
+│   └── README.md
+│
+└── reto2_microservices/
+    ├── orders_service/
+    │   ├── main.py
+    │   ├── models/
+    │   │   └── order.py
+    │   ├── routes/
+    │   │   └── orders.py
+    │   ├── config/
+    │   │   ├── database.py
+    │   │   └── rabbit.py
+    │   ├── Dockerfile
+    │   └── requirements.txt
+    │
+    ├── notifications_service/
+    │   ├── consumer.py
+    │   ├── config/
+    │   │   └── rabbit.py
+    │   ├── Dockerfile
+    │   └── requirements.txt
+    │
+    ├── docker-compose.yml (levanta TODO: MongoDB, RabbitMQ, ambos servicios)
+    ├── .env.example.local (variables para Docker local)
+    ├── .env.example.railway (variables para Railway con servicios externos)
+    └── README.md
+
+---
+
+RETO 1 - USER SERVICE:
+- FastAPI con endpoints: POST /users, GET /users/{id}, PUT /users/{id}, DELETE /users/{id}
+- MongoDB async con Motor
+- Pydantic para validaciones (UserCreate, UserUpdate, UserResponse)
+- Encriptar password con bcrypt
+- Middleware que mida tiempo de respuesta y loggee en consola
+- Usar variables de entorno (MONGODB_URI)
+- Código que funcione tanto local (mongodb://mongodb:27017) como Railway (mongodb+srv://...)
+
+RETO 2 - MICROSERVICES:
+- orders_service: 
+  * POST /orders (campos: product_name, quantity, customer_email)
+  * Guarda en MongoDB
+  * Publica mensaje en RabbitMQ cola "orders_queue"
+  
+- notifications_service:
+  * Consumer que escucha "orders_queue"
+  * Imprime: "New order received: {order_id}"
+  
+- Usar variables de entorno (MONGODB_URI, RABBITMQ_URL)
+- Código que funcione tanto local (amqp://rabbitmq:5672) como Railway (amqps://cloudamqp.com/...)
+
+---
+
+IMPORTANTE:
+1. El CÓDIGO debe ser IDÉNTICO para local y Railway
+2. Solo cambian las VARIABLES DE ENTORNO
+3. Usar os.getenv() para todas las configuraciones
+4. Incluir manejo de errores y try/except
+5. Logs claros en consola
+6. Comentarios explicativos en código crítico
+7. docker-compose.yml funcional para levantar TODO local
+8. README.md detallados con:
+   - Cómo levantar local (docker-compose up)
+   - Cómo configurar Railway (MongoDB Atlas + CloudAMQP)
+   - Ejemplos de curl/Postman
+   - Variables de entorno para ambos ambientes
+
+STACK:
+- Python 3.11
+- FastAPI
+- Motor (MongoDB async)
+- Pydantic v2
+- bcrypt
+- pika (RabbitMQ)
+- uvicorn
+
+Por favor genera TODO el código completo, archivo por archivo, listo para usar.

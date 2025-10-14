@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # MongoDB para órdenes
+  mongodb:
+    image: mongo:7.0
+    container_name: orders_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - microservices_network
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # Puerto AMQP
+      - "15672:15672"  # Puerto Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - microservices_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Orders Service
+  orders_service:
+    build: ./orders_service
+    container_name: orders_service
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - DATABASE_NAME=orders_db
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+    networks:
+      - microservices_network
+    volumes:
+      - ./orders_service:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  # Notifications Service
+  notifications_service:
+    build: ./notifications_service
+    container_name: notifications_service
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices_network
+    volumes:
+      - ./notifications_service:/app
+    restart: on-failure
+
+networks:
+  microservices_network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
