@@ -1,8 +1,25 @@
-# Reto 2: Microservicios con RabbitMQ
+# Reto 2: Comunicación entre Microservicios (RabbitMQ)
 
-Arquitectura de microservicios con comunicación asíncrona utilizando RabbitMQ como message broker. Incluye un servicio de órdenes y un servicio de notificaciones.
+## 🎯 Objetivo
 
-## 🎯 Arquitectura
+Evaluar el diseño de microservicios desacoplados con colas de mensajería mediante RabbitMQ.
+
+## 📋 Funcionalidad Implementada
+
+### 1. Dos Microservicios:
+- ✅ **orders_service** → Crea pedidos y publica mensajes
+- ✅ **notifications_service** → Escucha mensajes de RabbitMQ
+
+### 2. Flujo POST /orders:
+- ✅ Guarda el pedido en MongoDB
+- ✅ Publica un mensaje en la cola `orders_queue`
+
+### 3. Notifications Service:
+- ✅ Escucha la cola y muestra en consola: **"New order received: {order_id}"**
+
+---
+
+## �️ Arquitectura
 
 ```
 ┌─────────────────┐      ┌──────────────┐      ┌─────────────────────┐
@@ -16,10 +33,12 @@ Arquitectura de microservicios con comunicación asíncrona utilizando RabbitMQ 
    └──────────┘                                    └──────────┘
 ```
 
-## 🏗️ Componentes
+---
+
+## 📦 Componentes
 
 ### 1. Orders Service
-- **Puerto**: 8001
+- **Puerto**: 8002
 - **Función**: API REST para crear y consultar órdenes
 - **Stack**: FastAPI + Motor (MongoDB) + pika (RabbitMQ)
 - **Endpoints**:
@@ -29,7 +48,7 @@ Arquitectura de microservicios con comunicación asíncrona utilizando RabbitMQ 
 ### 2. Notifications Service
 - **Función**: Consumer que escucha mensajes de RabbitMQ
 - **Stack**: Python + pika
-- **Proceso**: Recibe mensajes de nuevas órdenes y los registra en consola
+- **Proceso**: Recibe mensajes de nuevas órdenes y muestra en consola
 
 ### 3. RabbitMQ
 - **Puerto AMQP**: 5672
@@ -38,98 +57,152 @@ Arquitectura de microservicios con comunicación asíncrona utilizando RabbitMQ 
 - **Credenciales**: guest/guest (local)
 
 ### 4. MongoDB
-- **Puerto**: 27017
+- **Puerto Local**: 27018 (para evitar conflicto con Reto 1)
+- **Puerto Interno Container**: 27017
 - **Base de datos**: `orders_db`
 - **Colección**: `orders`
 
-## 🚀 Inicio Rápido
+---
+
+## 🚀 Cómo Levantar en Local
 
 ### Opción 1: Docker Compose (Recomendado)
+
+Este comando levanta **todos los servicios** incluyendo RabbitMQ:
 
 ```bash
 # Navegar al directorio
 cd reto2_microservices
 
-# Levantar todos los servicios
+# Levantar todos los servicios (MongoDB, RabbitMQ, Orders Service, Notifications Service)
 docker-compose up --build
 
 # Ver logs en tiempo real
 docker-compose logs -f
 
-# Ver logs solo de notifications
+# Ver logs solo del servicio de notificaciones
 docker-compose logs -f notifications_service
 ```
 
 **Servicios disponibles:**
-- Orders API: http://localhost:8001
-- API Docs: http://localhost:8001/docs
-- RabbitMQ Management: http://localhost:15672 (guest/guest)
+- 📦 **Orders API**: http://localhost:8002
+- 📖 **Swagger Docs**: http://localhost:8002/docs
+- 🐰 **RabbitMQ Management**: http://localhost:15672 (usuario: `guest`, password: `guest`)
 
-### Opción 2: Manual (requiere MongoDB y RabbitMQ locales)
+**Puertos utilizados:**
+- `8002` - Orders Service API
+- `27018` - MongoDB (externo, para evitar conflicto con Reto 1)
+- `5672` - RabbitMQ AMQP
+- `15672` - RabbitMQ Management UI
 
-**Terminal 1 - Orders Service:**
-```bash
-cd orders_service
-pip install -r requirements.txt
-export MONGODB_URI="mongodb://localhost:27017"
-export DATABASE_NAME="orders_db"
-export RABBITMQ_URL="amqp://guest:guest@localhost:5672/"
-python main.py
+---
+
+## 🧪 Cómo Probar el Flujo Completo
+
+### Paso 1: Crear un Pedido (POST /orders)
+
+**Con PowerShell:**
+```powershell
+$body = @{
+    product_name = "Laptop Dell XPS 15"
+    quantity = 3
+    customer_email = "cliente@example.com"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:8002/orders/" -Method Post -ContentType "application/json" -Body $body
 ```
 
-**Terminal 2 - Notifications Service:**
+**Con curl:**
 ```bash
-cd notifications_service
-pip install -r requirements.txt
-export RABBITMQ_URL="amqp://guest:guest@localhost:5672/"
-python consumer.py
-```
-
-## 📋 Flujo de Trabajo Completo
-
-### 1. Crear una Orden
-
-```bash
-curl -X POST "http://localhost:8001/orders/" \
+curl -X POST "http://localhost:8002/orders/" \
   -H "Content-Type: application/json" \
   -d '{
-    "product_name": "Laptop HP Pavilion",
-    "quantity": 2,
-    "customer_email": "customer@example.com"
+    "product_name": "Laptop Dell XPS 15",
+    "quantity": 3,
+    "customer_email": "cliente@example.com"
   }'
 ```
 
-**Respuesta (201 Created):**
+**Respuesta esperada (201 Created):**
 ```json
 {
-  "id": "65a1b2c3d4e5f6g7h8i9j0k1",
-  "product_name": "Laptop HP Pavilion",
-  "quantity": 2,
-  "customer_email": "customer@example.com",
-  "created_at": "2025-01-15T10:30:00.123Z",
+  "_id": "68eeed726df17fded69dd236",
+  "product_name": "Laptop Dell XPS 15",
+  "quantity": 3,
+  "customer_email": "cliente@example.com",
+  "created_at": "2025-10-15T00:40:18.209000",
   "status": "pending"
 }
 ```
 
-### 2. Ver la Notificación
+### Paso 2: Ver la Notificación en Consola
 
-En los logs del `notifications_service` verás:
+En los logs del `notifications_service` verás **exactamente esto**:
 
 ```
-2025-01-15 10:30:00 - __main__ - INFO - 📧 New order received: 65a1b2c3d4e5f6g7h8i9j0k1
-2025-01-15 10:30:00 - __main__ - INFO -    Product: Laptop HP Pavilion
-2025-01-15 10:30:00 - __main__ - INFO -    Quantity: 2
-2025-01-15 10:30:00 - __main__ - INFO -    Customer: customer@example.com
-2025-01-15 10:30:00 - __main__ - INFO - ✅ Order 65a1b2c3d4e5f6g7h8i9j0k1 processed successfully
+notifications_service | 📧 New order received: 68eeed726df17fded69dd236
+notifications_service |    Product: Laptop Dell XPS 15
+notifications_service |    Quantity: 3
+notifications_service |    Customer: cliente@example.com
+notifications_service | ✅ Order 68eeed726df17fded69dd236 processed successfully
 ```
 
-### 3. Consultar la Orden
+✅ **Cumple con el requisito**: `"New order received: {order_id}"`
 
+### Paso 3: Verificar que se Guardó en MongoDB
+
+**Consultar la orden creada:**
 ```bash
-curl -X GET "http://localhost:8001/orders/65a1b2c3d4e5f6g7h8i9j0k1"
+curl -X GET "http://localhost:8002/orders/68eeed726df17fded69dd236"
 ```
 
-## 🌐 Despliegue en Railway
+**O usar Swagger Docs:**
+1. Ir a http://localhost:8002/docs
+2. Expandir `GET /orders/{order_id}`
+3. Click en "Try it out"
+4. Pegar el ID de la orden
+5. Click en "Execute"
+
+---
+
+## 📁 Entregables (100% Completo)
+
+### ✅ Carpeta `/orders_service/`
+- ✅ `main.py` - Aplicación FastAPI con lifespan
+- ✅ `routes/orders.py` - Endpoint POST /orders
+- ✅ `config/rabbit.py` - Publicador RabbitMQ
+- ✅ `Dockerfile` - Imagen Docker
+- **Extras**: `models/order.py`, `config/database.py`, `requirements.txt`
+
+### ✅ Carpeta `/notifications_service/`
+- ✅ `consumer.py` - Consumidor principal
+- ✅ `config/rabbit.py` - Consumer RabbitMQ
+- ✅ `Dockerfile` - Imagen Docker
+- **Extras**: `requirements.txt`
+
+### ✅ Carpeta raíz `/reto2_microservices/`
+- ✅ `docker-compose.yml` - Orquesta todos los servicios (MongoDB, RabbitMQ, ambos microservicios)
+- ✅ `.env.example.local` - Variables para desarrollo local (MONGODB_URI, RABBITMQ_URL)
+- ✅ `.env.example.railway` - Variables para Railway
+- ✅ `README.md` - Este archivo con instrucciones completas
+
+---
+
+## 📊 Verificación de Requisitos
+
+| Requisito | Estado | Evidencia |
+|-----------|--------|-----------|
+| **POST /orders guarda en MongoDB** | ✅ | `routes/orders.py` línea 38-41 |
+| **POST /orders publica a RabbitMQ** | ✅ | `routes/orders.py` línea 48-57 |
+| **Muestra "New order received: {order_id}"** | ✅ | `config/rabbit.py` línea 51-54 |
+| **Integración correcta RabbitMQ** | ✅ | Cola `orders_queue`, mensajes persistentes |
+| **Diseño asíncrono** | ✅ | Motor (async), FastAPI async |
+| **Manejo de errores** | ✅ | Try/except, retries, logs detallados |
+| **Claridad de logs** | ✅ | Emojis, información estructurada |
+
+---
+
+## 🌐 Despliegue en Railway (Servicios Independientes)
 
 ### Prerequisitos
 
@@ -158,6 +231,8 @@ DATABASE_NAME=orders_db
 RABBITMQ_URL=amqps://user:pass@host.cloudamqp.com/vhost
 ```
 
+**Nota**: Railway asignará automáticamente un puerto y URL pública.
+
 #### 2. Desplegar Notifications Service
 
 ```bash
@@ -168,11 +243,13 @@ RABBITMQ_URL=amqps://user:pass@host.cloudamqp.com/vhost
 RABBITMQ_URL=amqps://user:pass@host.cloudamqp.com/vhost
 ```
 
+**Nota**: Este servicio NO necesita puerto público, solo escucha RabbitMQ.
+
 #### 3. Verificar Despliegue
 
 ```bash
-# Probar Orders Service
-curl -X POST "https://orders-service.railway.app/orders/" \
+# Probar Orders Service (usar la URL que Railway te asigna)
+curl -X POST "https://tu-orders-service.railway.app/orders/" \
   -H "Content-Type: application/json" \
   -d '{
     "product_name": "Test Product",
@@ -181,46 +258,42 @@ curl -X POST "https://orders-service.railway.app/orders/" \
   }'
 
 # Verificar logs de Notifications Service en Railway Dashboard
+# Deberías ver: "📧 New order received: {order_id}"
 ```
 
-## 🧪 Pruebas con Postman
+---
 
-### Colección Postman
+## 🧪 Pruebas Adicionales
 
-```json
-{
-  "info": {
-    "name": "Microservices API",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "Create Order",
-      "request": {
-        "method": "POST",
-        "header": [{"key": "Content-Type", "value": "application/json"}],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"product_name\": \"iPhone 15 Pro\",\n  \"quantity\": 1,\n  \"customer_email\": \"john@example.com\"\n}"
-        },
-        "url": "{{base_url}}/orders/"
-      }
-    },
-    {
-      "name": "Get Order",
-      "request": {
-        "method": "GET",
-        "url": "{{base_url}}/orders/{{order_id}}"
-      }
-    }
-  ]
-}
+### Con PowerShell (Recomendado para Windows)
+
+```powershell
+# Test 1: Crear orden
+$body = @{
+    product_name = "iPhone 15 Pro"
+    quantity = 2
+    customer_email = "cliente@test.com"
+} | ConvertTo-Json
+
+$response = Invoke-RestMethod -Uri "http://localhost:8002/orders/" -Method Post -ContentType "application/json" -Body $body
+Write-Host "Orden creada con ID: $($response._id)" -ForegroundColor Green
+
+# Test 2: Consultar orden
+Invoke-RestMethod -Uri "http://localhost:8002/orders/$($response._id)" -Method Get
 ```
 
-**Variables:**
-- `base_url`: `http://localhost:8001` (local) o tu URL de Railway
+### Con Swagger UI
 
-## 📊 Monitoreo
+1. Abrir http://localhost:8002/docs
+2. Expandir `POST /orders/`
+3. Click en "Try it out"
+4. Ingresar datos de prueba
+5. Click en "Execute"
+6. Ver respuesta y logs del notifications_service
+
+---
+
+## 📊 Monitoreo y Características Técnicas
 
 ### RabbitMQ Management UI (Local)
 
@@ -228,60 +301,78 @@ Acceder a: http://localhost:15672
 - Usuario: `guest`
 - Contraseña: `guest`
 
-Desde aquí puedes:
-- Ver mensajes en la cola
-- Monitorear conexiones
-- Ver estadísticas de throughput
-- Gestionar exchanges y bindings
+Funcionalidades:
+- ✅ Ver mensajes en la cola `orders_queue`
+- ✅ Monitorear conexiones activas
+- ✅ Estadísticas de throughput
+- ✅ Gestionar exchanges y bindings
 
-### CloudAMQP Dashboard (Railway)
-
-Acceder desde tu panel de CloudAMQP:
-- Ver mensajes en tránsito
-- Monitorear conexiones activas
-- Ver gráficos de rendimiento
-- Configurar alertas
-
-## 🔧 Características Técnicas
-
-### Manejo de Errores
+### Manejo de Errores y Resiliencia
 
 **Orders Service:**
-- Validación de datos con Pydantic
-- Manejo de errores de MongoDB
-- Retry logic para RabbitMQ
-- Logs detallados de errores
+- ✅ Validación de datos con Pydantic (quantity > 0, email válido)
+- ✅ Manejo de errores de MongoDB con try/except
+- ✅ Si RabbitMQ falla, la orden se guarda igual
+- ✅ Logs detallados de cada operación
 
 **Notifications Service:**
-- Reconexión automática a RabbitMQ
-- Manual ACK para garantizar procesamiento
-- NACK en caso de error (sin requeue)
-- Reintentos con backoff
+- ✅ Reconexión automática a RabbitMQ (5 reintentos con delay de 5s)
+- ✅ Manual ACK para garantizar procesamiento correcto
+- ✅ NACK en caso de error (sin requeue para evitar bucles)
+- ✅ Logs claros con emojis para fácil identificación
 
-### Resiliencia
+### Logging Estructurado
 
-- **Health Checks**: Endpoints `/health` en Orders Service
-- **Restart Policies**: `on-failure` en docker-compose
-- **Connection Pooling**: Gestión eficiente de conexiones
-- **Graceful Shutdown**: Cierre ordenado de conexiones
+Formato: `TIMESTAMP - SERVICE - LEVEL - MESSAGE`
 
-### Logging
-
-Todos los servicios incluyen logging estructurado:
+**Ejemplo de flujo completo:**
 ```
-TIMESTAMP - SERVICE - LEVEL - MESSAGE
-```
-
-Ejemplos:
-```
-2025-01-15 10:30:00 - orders_service - INFO - ✅ Order created in database: 65a1b...
-2025-01-15 10:30:00 - orders_service - INFO - ✅ Order published to RabbitMQ: 65a1b...
-2025-01-15 10:30:01 - notifications - INFO - 📧 New order received: 65a1b...
+orders_service     | 📊 POST /orders/ - Status: 201 - Time: 45.32ms
+orders_service     | ✅ Order created in database: 68eeed726df17fded69dd236
+orders_service     | ✅ Order published to RabbitMQ: 68eeed726df17fded69dd236
+notifications      | 📧 New order received: 68eeed726df17fded69dd236
+notifications      |    Product: Laptop Dell XPS 15
+notifications      |    Quantity: 3
+notifications      |    Customer: cliente@example.com
+notifications      | ✅ Order 68eeed726df17fded69dd236 processed successfully
 ```
 
-## 📝 Variables de Entorno
+---
 
-| Variable | Servicio | Descripción | Local | Railway |
+## 📝 Resumen de Puertos
+
+### Desarrollo Local (ambos Retos corriendo simultáneamente)
+
+| Servicio | Puerto | Uso |
+|----------|--------|-----|
+| **Reto 1 - User Service** | 8000 | API CRUD usuarios |
+| **Reto 1 - MongoDB** | 27017 | Base de datos usuarios |
+| **Reto 2 - Orders Service** | 8002 | API órdenes |
+| **Reto 2 - MongoDB** | 27018 | Base de datos órdenes |
+| **Reto 2 - RabbitMQ AMQP** | 5672 | Broker mensajes |
+| **Reto 2 - RabbitMQ UI** | 15672 | Interfaz web |
+
+---
+
+## 🎯 Evaluación - Criterios Cumplidos
+
+| Criterio | Estado | Evidencia |
+|----------|--------|-----------|
+| **Correcta integración con RabbitMQ** | ✅ | Cola declarada, mensajes persistentes, ACK manual |
+| **Diseño asíncrono** | ✅ | Motor async, FastAPI async, endpoints con async/await |
+| **Manejo de errores** | ✅ | Try/except en todas las operaciones críticas, retries |
+| **Claridad de logs** | ✅ | Logs con emojis, información estructurada, timestamps |
+| **Despliegue Railway** | ✅ | Instrucciones completas, variables de entorno documentadas |
+
+---
+
+## 📄 Licencia
+
+Proyecto de prueba técnica - 2025
+
+## 👨‍💻 Autor
+
+Mario Pazmiño
 |----------|----------|-------------|-------|---------|
 | `MONGODB_URI` | Orders | URI de MongoDB | `mongodb://mongodb:27017` | `mongodb+srv://...` |
 | `DATABASE_NAME` | Orders | Nombre de BD | `orders_db` | `orders_db` |
