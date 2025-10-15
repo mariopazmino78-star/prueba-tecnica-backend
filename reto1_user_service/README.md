@@ -2,7 +2,17 @@
 
 API REST completa para gestión de usuarios utilizando FastAPI y MongoDB con operaciones CRUD, encriptación de contraseñas y middleware de logging.
 
-## 🎯 Características
+## � Despliegue en Producción
+
+**✅ DESPLEGADO EXITOSAMENTE EN RAILWAY**
+
+- **URL API:** https://prueba-tecnica-backend-production-61a8.up.railway.app
+- **Documentación Swagger:** https://prueba-tecnica-backend-production-61a8.up.railway.app/docs
+- **Health Check:** https://prueba-tecnica-backend-production-61a8.up.railway.app/health
+- **Base de Datos:** MongoDB Atlas (Cluster M0 Free Tier)
+- **Estado:** 🟢 Online y Funcionando
+
+## �🎯 Características
 
 - ✅ **CRUD Completo**: Create, Read, Update, Delete de usuarios
 - ✅ **Seguridad**: Encriptación de contraseñas con bcrypt
