@@ -2,6 +2,31 @@
 
 Este proyecto contiene la solución completa para la prueba técnica de Backend Developer, implementando dos retos principales utilizando FastAPI, MongoDB y RabbitMQ.
 
+## 🌐 Despliegue en Producción
+
+**✅ TODOS LOS SERVICIOS DESPLEGADOS Y FUNCIONANDO**
+
+### Reto 1 - User Service (CRUD)
+- **URL:** https://prueba-tecnica-backend-production-61a8.up.railway.app
+- **Swagger Docs:** https://prueba-tecnica-backend-production-61a8.up.railway.app/docs
+- **Estado:** 🟢 Online
+
+### Reto 2 - Orders Service (Microservicios)
+- **URL:** https://tranquil-embrace-production.up.railway.app
+- **Swagger Docs:** https://tranquil-embrace-production.up.railway.app/docs
+- **Estado:** 🟢 Online
+
+### Reto 2 - Notifications Service (Worker)
+- **Tipo:** Background Worker
+- **Estado:** 🟢 Listening for RabbitMQ messages
+
+### Infraestructura Cloud
+- **Railway:** Hosting de servicios Python
+- **MongoDB Atlas:** Base de datos (M0 Free Tier)
+- **CloudAMQP:** RabbitMQ como servicio (Little Lemur Free)
+
+---
+
 ## 📦 Stack Tecnológico
 
 - **Python 3.11**

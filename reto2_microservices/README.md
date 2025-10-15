@@ -1,6 +1,24 @@
 # Reto 2: Comunicación entre Microservicios (RabbitMQ)
 
-## 🎯 Objetivo
+## � Despliegue en Producción
+
+**✅ DESPLEGADO EXITOSAMENTE EN RAILWAY + CLOUDAMQP**
+
+### Orders Service (API REST)
+- **URL API:** https://tranquil-embrace-production.up.railway.app
+- **Documentación Swagger:** https://tranquil-embrace-production.up.railway.app/docs
+- **Health Check:** https://tranquil-embrace-production.up.railway.app/health
+- **Base de Datos:** MongoDB Atlas (orders_db)
+- **Message Broker:** CloudAMQP (RabbitMQ Free Tier)
+- **Estado:** 🟢 Online y Funcionando
+
+### Notifications Service (Worker)
+- **Tipo:** Background Worker (Consumer)
+- **Message Broker:** CloudAMQP (RabbitMQ Free Tier)
+- **Estado:** 🟢 Listening for messages
+- **Logs:** Visible en Railway Dashboard
+
+## �🎯 Objetivo
 
 Evaluar el diseño de microservicios desacoplados con colas de mensajería mediante RabbitMQ.
 
